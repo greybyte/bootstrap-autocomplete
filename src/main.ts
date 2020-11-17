@@ -22,6 +22,12 @@ import { AjaxResolver, BaseResolver } from './resolvers';
 import { DropdownV3 } from './dropdownV3';
 import { DropdownV4 } from './dropdownV4';
 
+export interface Indicators {
+  loading: string,
+  selected: string,
+  freeText: string,
+  empty: string
+}
 
 export interface AutoCompleteSettings {
   resolver: string,
@@ -29,10 +35,12 @@ export interface AutoCompleteSettings {
   minLength: number,
   valueKey: string,
   formatResult: (item: any) => {},
+  formatFreeValue: (value: string) => {},
   autoSelect: boolean,
   noResultsText: string,
   bootstrapVersion: string,
   preventEnter: boolean,
+  indicators: Indicators,
   events: {
     typed: (newValue: string, el: JQuery<HTMLElement>) => string,
     searchPre: (searchText: string, el: JQuery<HTMLElement>) => string,
@@ -62,8 +70,10 @@ export class AutoComplete {
     minLength: 3,
     valueKey: 'value',
     formatResult: this.defaultFormatResult,
+    formatFreeValue: (value) => value,
     autoSelect: true,
     noResultsText: 'No results',
+    indicators: {loading: '', selected: '', freeText: '', empty: ''},
     bootstrapVersion: 'auto',
     preventEnter: false,
     events: {
@@ -193,7 +203,7 @@ export class AutoComplete {
     if (this.getBootstrapVersion()[0] === 4) {
       // v4
       this._dd = new DropdownV4(this._$el, this._settings.formatResult,
-        this._settings.autoSelect, this._settings.noResultsText
+        this._settings.autoSelect, this._settings.formatFreeValue, this._settings.indicators
       );
     } else {
       this._dd = new DropdownV3(this._$el, this._settings.formatResult,
@@ -375,6 +385,7 @@ export class AutoComplete {
 
   private handlerDoSearch(): void {
     // custom handler may change newValue
+    this._dd.setLoading(true);
     if (this._settings.events.search !== null) {
       this._settings.events.search(this._searchText, (results: any) => {
         this.postSearchCallback(results);
@@ -399,7 +410,7 @@ export class AutoComplete {
       if ((typeof results === 'boolean') && !results)
         return;
     }
-
+    this._dd.setLoading(false);
     this.handlerStartShow(results);
   }
 
@@ -431,6 +442,7 @@ export class AutoComplete {
     }
     // save selected item
     this._selectedItem = item;
+    this._dd.onItemSelected(item);
     // and hide
     this._dd.hide();
   }

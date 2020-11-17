@@ -84,6 +84,14 @@ export class DropdownV3 {
 
   }
 
+  public onItemSelected(item: any): void {
+    // not supported in V3
+  }
+
+  public setLoading(loading: boolean): void {
+    // not supported in V3
+  }
+
   private checkInitialized(): void {
     // Lazy init
     if (!this.initialized) {

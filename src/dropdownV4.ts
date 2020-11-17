@@ -2,33 +2,48 @@
  *	Dropdown class. Manages the dropdown drawing
  */
 
+import { Indicators } from "./main";
+
 export class DropdownV4 {
   // For Bootstrap 4 new dropdown syntax
   protected _$el: JQuery;
   // dropdown element
   protected _dd: JQuery;
+  // wrap
+  protected _$wrap: JQuery;
   protected initialized: boolean = false;
   protected shown: boolean = false;
   protected items: any[] = [];
   protected formatItem: (item: any) => any;
+  protected formatFreeValue: (item: string) => any;
   protected searchText: string;
   protected autoSelect: boolean;
   protected mouseover: boolean;
   protected ddMouseover: boolean = false;
-  protected noResultsText: string;
+  protected indicators: Indicators;
 
-  constructor(e: JQuery, formatItemCbk: (item: any) => any, autoSelect: boolean, noResultsText: string) {
+  constructor(
+      e: JQuery,
+      formatItemCbk: (item: any) => any,
+      autoSelect: boolean,
+      formatFreeValue: (value: string) => any,
+      indicators: Indicators
+    ) {
     this._$el = e;
     this.formatItem = formatItemCbk;
+    this.formatFreeValue = formatFreeValue;
     this.autoSelect = autoSelect;
-    this.noResultsText = noResultsText;
+    this.indicators = indicators;
+
+    // wrap into div for indicator
+    this._$wrap = this._$el.wrap('<div class="indicator-wrap" style="position: relative;"/>').parent();
 
     // initialize it in lazy mode to deal with glitches like modals
     // this.init();
   }
 
   protected getElPos(): any {
-    const pos: any = $.extend({}, this._$el.position(), {
+    const pos: any = $.extend({}, this._$el.parents('.indicator-wrap').position(), {
       height: this._$el[0].offsetHeight
     });
     return pos;
@@ -42,7 +57,7 @@ export class DropdownV4 {
     // add our class and basic dropdown-menu class
     this._dd.addClass('bootstrap-autocomplete dropdown-menu');
 
-    this._dd.insertAfter(this._$el);
+    this._dd.insertAfter(this._$el.parents('.indicator-wrap'));
     this._dd.css({ top: pos.top + this._$el.outerHeight(), left: pos.left, width: this._$el.outerWidth() });
 
     // click event on items
@@ -91,6 +106,23 @@ export class DropdownV4 {
 
     this.initialized = true;
 
+  }
+
+  protected setIndicator(content: string): void {
+    const $indicator: JQuery = this._$wrap.find('.form-control-feedback');
+    if ($indicator.length < 1 && content) {
+      $('<span class="form-control-feedback">'+content+'</span>').appendTo(this._$wrap);
+    } else {
+      $indicator.html(content);
+    }
+  }
+
+  public onItemSelected(item: any): void {
+    this.setIndicator(this.indicators.selected);
+  }
+
+  public setLoading(loading: boolean): void {
+    this.setIndicator((loading)?this.indicators.loading:this.indicators.empty);
   }
 
   private checkInitialized(): void {
@@ -146,8 +178,14 @@ export class DropdownV4 {
 
   public show(): void {
     if (!this.shown) {
+      this.setIndicator(this.indicators.empty);
+      this._$el.trigger('autocomplete.dd.showing');
       const pos = this.getElPos();
-      // this._dd.css({ top: pos.top + this._$el.outerHeight(), left: pos.left, width: this._$el.outerWidth() });
+      this._dd.css({ top: pos.top + this._$el.outerHeight(),
+                     left: pos.left,
+                     width: this._$el.outerWidth(),
+                     overflowY: 'auto',
+                     maxHeight: 'calc(100vh - ' + (this._$el.offset().top + 50) +'px)' });
       this._dd.addClass('show');
       this.shown = true;
       this._$el.trigger('autocomplete.dd.shown');
@@ -221,27 +259,24 @@ export class DropdownV4 {
       this._dd.append(liList);
       this.show();
     } else {
-      // No results
-      if (this.noResultsText === '') {
-        // hide the dropdown
-        this.hide();
-      } else {
-        // show no results message
         const li = $('<a >');
-        li.addClass('dropdown-item disabled')
-          .html(this.noResultsText);
-
+        li.addClass('dropdown-item')
+          .html(this.formatFreeValue(this.searchText));
           liList.push(li);
         this._dd.append(liList);
         this.show();
-      }
     }
   }
 
   protected itemSelectedLaunchEvent(item: any): void {
     // launch selected event
-    // console.log('itemSelectedLaunchEvent', item);
-    this._$el.trigger('autocomplete.select', item)
+    if (!item) {
+      this._$el.trigger('autocomplete.freevalue', this.searchText);
+      this.hide();
+    } else {
+      this._$el.trigger('autocomplete.select', item)
+    }
+
   }
 
 }

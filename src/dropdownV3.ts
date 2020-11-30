@@ -53,6 +53,7 @@ export class DropdownV3 {
             // ESC
             this.hide();
             this._$el.focus();
+            evt.stopPropagation();
             break;
 
         }
@@ -145,7 +146,7 @@ export class DropdownV3 {
 
   public show(): void {
     if (!this.shown) {
-      this._dd.dropdown().show();
+      this._dd.addClass('show');
       this.shown = true;
     }
   }
@@ -156,7 +157,7 @@ export class DropdownV3 {
 
   public hide(): void {
     if (this.shown) {
-      this._dd.dropdown().hide();
+      this._dd.removeClass('show');
       this.shown = false;
     }
   }
@@ -224,15 +225,15 @@ export class DropdownV3 {
 
       liList.push(li);
     }
-
-
     this._dd.append(liList);
+    this.show();
   }
 
   protected itemSelectedLaunchEvent(item: any): void {
     // launch selected event
     // console.log('itemSelectedLaunchEvent', item);
-    this._$el.trigger('autocomplete.select', item)
+    this._$el.trigger('autocomplete.select', item);
+    this.hide();
   }
 
 }

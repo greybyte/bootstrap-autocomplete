@@ -18,7 +18,9 @@
     "src/*"
   ],
   "scripts": {
-    "test": "gulp test"
+    "start": "gulp monitor",
+    "test": "gulp test",
+    "dist": "gulp release"
   },
   "devDependencies": {
     "@types/bootstrap": "^4.2.1",

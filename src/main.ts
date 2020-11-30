@@ -402,8 +402,6 @@ export class AutoComplete {
   }
 
   private postSearchCallback(results: any): void {
-    // console.log('callback called', results);
-
     // custom handler may change newValue
     if (this._settings.events.searchPost) {
       results = this._settings.events.searchPost(results, this._$el);
